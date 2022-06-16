@@ -561,7 +561,7 @@ class SpyderKernel(IPythonKernel):
                 return u'cython'
         return None
 
-    def update_syspath(self, path_dict, new_path_dict):
+    def update_syspath(self, path_dict, new_path_dict, prepend=False):
         """
         Update the PYTHONPATH of the kernel.
 
@@ -570,6 +570,8 @@ class SpyderKernel(IPythonKernel):
 
         `path_dict` corresponds to the previous state of the PYTHONPATH.
         `new_path_dict` corresponds to the new state of the PYTHONPATH.
+        `prepend` indicates whether the paths should be added to the front
+        (True) or back (False) of sys.path.
         """
         # Remove old paths
         for path in path_dict:
@@ -579,8 +581,13 @@ class SpyderKernel(IPythonKernel):
         # Add new paths
         pypath = [path for path, active in new_path_dict.items() if active]
         if pypath:
-            sys.path.extend(pypath)
-            os.environ.update({'PYTHONPATH': os.pathsep.join(pypath)})
+            if prepend:
+                # Reverse order to ensure correct path order
+                for path in reversed(pypath):
+                    sys.path.insert(0, path)
+            else:
+                sys.path.extend(pypaths)
+                os.environ.update({'PYTHONPATH': os.pathsep.join(pypath)})
         else:
             os.environ.pop('PYTHONPATH', None)
 
